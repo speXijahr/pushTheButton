@@ -14,22 +14,14 @@ import static cz.etn.ptb.controllers.ButtonController.BUTTON_STATE_UNKOWN_THRESH
 @NoArgsConstructor
 public class ButtonStateResponse {
 
-    public static final Integer BUTTON_STATE_ACTIVE = 1;
-    public static final Integer BUTTON_STATE_FLASHING = 2;
-    public static final Integer BUTTON_STATE_INACTIVE = 3;
-    public static final Integer BUTTON_STATE_UNKNOWN = 4;
+    public enum LightStatus {
+        LIGHTS_ON, LIGHTS_OFF, LIGHTS_BLINK, UNKNOWN
+    }
 
     @NotNull
     private String buttonId;
 
-    /**
-     * States
-     * 1 - Active
-     * 2 - Flashing
-     * 3 - Inactive
-     * 4 - Unknown
-     */
-    private int stateId;
+    private LightStatus stateId;
 
     private long reservationExpire;
 
@@ -42,17 +34,17 @@ public class ButtonStateResponse {
         return buttonState;
     }
 
-    public static Integer getButtonState(ButtonDBO buttonDBO) {
+    public static LightStatus getButtonState(ButtonDBO buttonDBO) {
         var now = Instant.now().toEpochMilli();
 
         if (now - buttonDBO.getLastHeartbeat() > BUTTON_STATE_UNKOWN_THRESHOLD.toMillis()) {
-            return ButtonStateResponse.BUTTON_STATE_INACTIVE;
-        } else if (buttonDBO.getReservationExpire() - now > BUTTON_STATE_FLASHING_THRESHOLD.toMillis()) {
-            return ButtonStateResponse.BUTTON_STATE_FLASHING;
+            return LightStatus.UNKNOWN;
+        } else if (buttonDBO.getReservationExpire() - now < BUTTON_STATE_FLASHING_THRESHOLD.toMillis()) {
+            return LightStatus.LIGHTS_BLINK;
         } else if (buttonDBO.getReservationExpire() > now) {
-            return ButtonStateResponse.BUTTON_STATE_ACTIVE;
+            return LightStatus.LIGHTS_ON;
         } else {
-            return ButtonStateResponse.BUTTON_STATE_INACTIVE;
+            return LightStatus.LIGHTS_OFF;
         }
     }
 

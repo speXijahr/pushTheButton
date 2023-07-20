@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -35,12 +37,17 @@ public class ButtonController {
      * If the heartbeat doesn't come in threshold, the button is considered in Unknown state
      */
     @PostMapping("heartbeat")
-    ResponseEntity<Integer> heartbeat(@RequestParam String buttonId) {
+    ResponseEntity<ButtonStateResponse.LightStatus> heartbeat(@RequestBody String buttonId) {
+        var mappings = Maps.uniqueIndex(buttonMappings.getMappings(), ButtonMapping::getId);
+        if (!mappings.containsKey(buttonId)) {
+            throw new UnknownButtonStateException("Couldn't find button mapping for id " + buttonId);
+        }
+
         var result = repo.findById(buttonId);
-        var button = result.orElseThrow(() -> new UnknownButtonStateException("Couldn't find button state for id " + buttonId));
+        var button = result.orElse(createNewButton(buttonId));
 
         button.setLastHeartbeat(Instant.now().toEpochMilli());
-        repo.insert(button);
+        repo.save(button);
 
         return ResponseEntity.ok(ButtonStateResponse.getButtonState(button));
     }
@@ -52,19 +59,27 @@ public class ButtonController {
      * If the button is flashing (last 1 min of reservation) you extend the reservation by another 15 minutes
      */
     @PostMapping("buttonPush")
-    ResponseEntity<Integer> buttonPush(@RequestParam String buttonId) {
-        var buttonDbo = repo.findById(buttonId).orElseGet(() -> createNewButtonState(buttonId));
-        repo.insert(buttonDbo);
+    ResponseEntity<ButtonStateResponse.LightStatus> buttonPush(@RequestBody String buttonId) {
+        var buttonDbo = repo.findById(buttonId).orElseGet(() -> createNewButtonWithExpire(buttonId));
+        buttonDbo.setReservationExpire(Instant.now().toEpochMilli() + RESERVATION_TIME.toMillis());
+        repo.save(buttonDbo);
         return ResponseEntity.ok(ButtonStateResponse.getButtonState(buttonDbo));
     }
 
-    private ButtonDBO createNewButtonState(String buttonId) {
+    private ButtonDBO createNewButton(String buttonId) {
         var state = new ButtonDBO();
         state.setButtonId(buttonId);
         state.setLastHeartbeat(Instant.now().toEpochMilli());
-        state.setReservationExpire(Instant.now().toEpochMilli() + RESERVATION_TIME.toMillis());
 
         return state;
+    }
+
+    private ButtonDBO createNewButtonWithExpire(String buttonId) {
+        var button = createNewButton(buttonId);
+        button.setLastHeartbeat(Instant.now().toEpochMilli());
+        button.setReservationExpire(Instant.now().toEpochMilli() + RESERVATION_TIME.toMillis());
+
+        return button;
     }
 
     @GetMapping("buttonMappings")
@@ -85,7 +100,9 @@ public class ButtonController {
             } else {
                 var buttonState = new ButtonStateResponse();
                 buttonState.setButtonId(mapping.getId());
-                buttonState.setStateId(ButtonStateResponse.BUTTON_STATE_UNKNOWN);
+                buttonState.setStateId(ButtonStateResponse.LightStatus.UNKNOWN);
+
+                buttonStates.add(buttonState);
             }
         }
 

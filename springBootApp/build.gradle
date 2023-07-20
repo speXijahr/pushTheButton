@@ -33,6 +33,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-web-services'
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	implementation group: 'com.google.guava', name: 'guava', version: '11.0.2'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
