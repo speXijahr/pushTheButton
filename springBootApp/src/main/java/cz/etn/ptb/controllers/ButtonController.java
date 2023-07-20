@@ -83,7 +83,7 @@ public class ButtonController {
         return ResponseEntity.ok(buttonMappings.getMappings());
     }
 
-    @GetMapping("buttonState")
+    @GetMapping("buttonStates")
     ResponseEntity<List<ButtonStateResponse>> getButtonState() {
         var buttons = Maps.uniqueIndex(db.values(), ButtonDBO::getButtonId);
         var mappings = buttonMappings.getMappings();

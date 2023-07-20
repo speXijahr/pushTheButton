@@ -19,7 +19,6 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
         return MONGO_DB_NAME;
     }
 
-    @Value("${spring.data.mongodb.uri}")
     private String connectionString;
 
     @Override
