@@ -3,6 +3,8 @@ package cz.etn.ptb.controllers;
 
 import cz.etn.ptb.dbo.ButtonMapping;
 import cz.etn.ptb.dbo.ButtonState;
+import cz.etn.ptb.repo.ButtonStateRepo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +15,9 @@ import java.util.List;
 
 @RestController
 public class ButtonController {
+
+    @Autowired
+    private ButtonStateRepo repo;
 
     /**
      * Button is periodically polling for actual state.
@@ -40,7 +45,7 @@ public class ButtonController {
      */
     @GetMapping("buttonStates")
     ResponseEntity<List<ButtonState>> getButtonStates() {
-        throw new UnsupportedOperationException();
+        return ResponseEntity.ok(repo.findAll());
     }
 
     @GetMapping("buttonMappings")

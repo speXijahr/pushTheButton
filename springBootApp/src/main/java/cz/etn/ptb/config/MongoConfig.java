@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 @Configuration
-@EnableMongoRepositories(basePackages = "cz.etn.ptb.config")
+@EnableMongoRepositories(basePackages = "cz.etn.ptb.repo")
 public class MongoConfig extends AbstractMongoClientConfiguration {
     private static final String MONGO_DB_NAME = "ptb";
 
