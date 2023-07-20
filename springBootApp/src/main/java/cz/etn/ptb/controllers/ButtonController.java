@@ -57,7 +57,11 @@ public class ButtonController {
     @PostMapping("buttonPush")
     ResponseEntity<ButtonStateResponse.LightStatus> buttonPush(@RequestBody String buttonId) {
         var buttonDbo = Optional.ofNullable(db.get(buttonId)).orElseGet(() -> createNewButtonWithExpire(buttonId));
-        buttonDbo.setReservationExpire(Instant.now().toEpochMilli() + RESERVATION_TIME.toMillis());
+        if (buttonDbo.getReservationExpire() - Instant.now().toEpochMilli() < BUTTON_STATE_FLASHING_THRESHOLD.toMillis()) {
+            buttonDbo.setReservationExpire(Instant.now().toEpochMilli() + RESERVATION_TIME.toMillis());
+        } else {
+            buttonDbo.setReservationExpire(0);
+        }
         db.put(buttonId, buttonDbo);
         return ResponseEntity.ok(ButtonStateResponse.getButtonState(buttonDbo));
     }

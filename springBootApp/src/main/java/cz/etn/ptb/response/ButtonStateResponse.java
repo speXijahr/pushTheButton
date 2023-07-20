@@ -37,15 +37,11 @@ public class ButtonStateResponse {
     public static LightStatus getButtonState(ButtonDBO buttonDBO) {
         var now = Instant.now().toEpochMilli();
 
-        if (now - buttonDBO.getLastHeartbeat() > BUTTON_STATE_UNKOWN_THRESHOLD.toMillis()) {
-            return LightStatus.UNKNOWN;
-        } else if (buttonDBO.getReservationExpire() - now < BUTTON_STATE_FLASHING_THRESHOLD.toMillis()) {
-            return LightStatus.LIGHTS_BLINK;
-        } else if (buttonDBO.getReservationExpire() > now) {
-            return LightStatus.LIGHTS_ON;
-        } else {
-            return LightStatus.LIGHTS_OFF;
-        }
+        if (now - buttonDBO.getLastHeartbeat() > BUTTON_STATE_UNKOWN_THRESHOLD.toMillis()) return LightStatus.UNKNOWN;
+        if (buttonDBO.getReservationExpire() == 0) return LightStatus.LIGHTS_OFF;
+        if (buttonDBO.getReservationExpire() - now < BUTTON_STATE_FLASHING_THRESHOLD.toMillis()) return LightStatus.LIGHTS_BLINK;
+        if (buttonDBO.getReservationExpire() > now) return LightStatus.LIGHTS_ON;
+        return LightStatus.LIGHTS_OFF;
     }
 
 
