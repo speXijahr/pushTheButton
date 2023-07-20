@@ -6,7 +6,6 @@ import cz.etn.ptb.config.ButtonMappingsConfiguration;
 import cz.etn.ptb.dbo.ButtonDBO;
 import cz.etn.ptb.response.ButtonMapping;
 import cz.etn.ptb.exception.UnknownButtonStateException;
-import cz.etn.ptb.repo.ButtonRepo;
 import cz.etn.ptb.response.ButtonStateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,23 +13,20 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class ButtonController {
     
-    private final ButtonRepo repo;
-
     private final ButtonMappingsConfiguration buttonMappings;
     private static Duration RESERVATION_TIME = Duration.ofMinutes(15);
     public static Duration BUTTON_STATE_UNKOWN_THRESHOLD = Duration.ofMinutes(1);
 
     public static Duration BUTTON_STATE_FLASHING_THRESHOLD = Duration.ofMinutes(1);
+
+    Map<String, ButtonDBO> db = new LinkedHashMap<>();
 
     /**
      * Button is periodically polling for actual state.
@@ -43,11 +39,11 @@ public class ButtonController {
             throw new UnknownButtonStateException("Couldn't find button mapping for id " + buttonId);
         }
 
-        var result = repo.findById(buttonId);
+        var result = Optional.ofNullable(db.get(buttonId));
         var button = result.orElse(createNewButton(buttonId));
 
         button.setLastHeartbeat(Instant.now().toEpochMilli());
-        repo.save(button);
+        db.put(buttonId, button);
 
         return ResponseEntity.ok(ButtonStateResponse.getButtonState(button));
     }
@@ -60,9 +56,9 @@ public class ButtonController {
      */
     @PostMapping("buttonPush")
     ResponseEntity<ButtonStateResponse.LightStatus> buttonPush(@RequestBody String buttonId) {
-        var buttonDbo = repo.findById(buttonId).orElseGet(() -> createNewButtonWithExpire(buttonId));
+        var buttonDbo = Optional.ofNullable(db.get(buttonId)).orElseGet(() -> createNewButtonWithExpire(buttonId));
         buttonDbo.setReservationExpire(Instant.now().toEpochMilli() + RESERVATION_TIME.toMillis());
-        repo.save(buttonDbo);
+        db.put(buttonId, buttonDbo);
         return ResponseEntity.ok(ButtonStateResponse.getButtonState(buttonDbo));
     }
 
@@ -89,7 +85,7 @@ public class ButtonController {
 
     @GetMapping("buttonState")
     ResponseEntity<List<ButtonStateResponse>> getButtonState() {
-        var buttons = Maps.uniqueIndex(repo.findAll(), ButtonDBO::getButtonId);
+        var buttons = Maps.uniqueIndex(db.values(), ButtonDBO::getButtonId);
         var mappings = buttonMappings.getMappings();
 
         List<ButtonStateResponse> buttonStates = new ArrayList<>();
