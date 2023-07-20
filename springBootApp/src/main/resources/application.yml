@@ -1,0 +1,6 @@
+spring.data.mongodb.uri: "mongodb://localhost:27017/ptb"
+
+buttons.mappings:
+  - id: "1"
+    name: "Budkee-1"
+    level: 3

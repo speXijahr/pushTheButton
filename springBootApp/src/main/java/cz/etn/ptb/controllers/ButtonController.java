@@ -1,6 +1,7 @@
 package cz.etn.ptb.controllers;
 
 
+import cz.etn.ptb.config.ButtonMappingsConfiguration;
 import cz.etn.ptb.dbo.ButtonMapping;
 import cz.etn.ptb.dbo.ButtonState;
 import cz.etn.ptb.exception.UnknownButtonStateException;
@@ -17,6 +18,8 @@ import java.util.List;
 public class ButtonController {
     
     private final ButtonStateRepo repo;
+
+    private final ButtonMappingsConfiguration buttonMappings;
 
     /**
      * Button is periodically polling for actual state.
@@ -42,7 +45,7 @@ public class ButtonController {
 
     @GetMapping("buttonMappings")
     ResponseEntity<List<ButtonMapping>> getButtonMappings() {
-        return ResponseEntity.ok(List.of());
+        return ResponseEntity.ok(buttonMappings.getMappings());
     }
 
 

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ButtonMapping {
 
-    private String buttonId;
-    private String buttonName;
+    private String id;
+    private String name;
+    private int level;
 }
