@@ -5,7 +5,7 @@ import cz.etn.ptb.dbo.ButtonMapping;
 import cz.etn.ptb.dbo.ButtonState;
 import cz.etn.ptb.exception.UnknownButtonStateException;
 import cz.etn.ptb.repo.ButtonStateRepo;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,15 +13,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class ButtonController {
-
-    @Autowired
-    private ButtonStateRepo repo;
+    
+    private final ButtonStateRepo repo;
 
     /**
      * Button is periodically polling for actual state.
      * If the heartbeat doesn't come in threshold, the button is considered in Unknown state
-     *
      */
     @PostMapping("heartbeat")
     ResponseEntity<String> heartbeat(@RequestParam String buttonId) {
@@ -31,7 +30,7 @@ public class ButtonController {
 
     /**
      * Button push event - change button state based upon active state
-     * If button is inactive, by pressing the button, you get a 15 minute reservation
+     * If button is inactive, by pressing the button, you get a 15-minute reservation
      * If the button is active, pressing the button means that you forfeit the reservation
      * If the button is flashing (last 1 min of reservation) you extend the reservation by another 15 minutes
      */
