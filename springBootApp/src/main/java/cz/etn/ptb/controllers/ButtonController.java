@@ -7,14 +7,12 @@ import cz.etn.ptb.exception.UnknownButtonStateException;
 import cz.etn.ptb.repo.ButtonStateRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 public class ButtonController {
 
     @Autowired
@@ -42,17 +40,10 @@ public class ButtonController {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * Return a list of button states displayed on FE
-     */
-    @GetMapping("buttonStates")
-    ResponseEntity<List<ButtonState>> getButtonStates() {
-        return ResponseEntity.ok(repo.findAll());
-    }
 
     @GetMapping("buttonMappings")
     ResponseEntity<List<ButtonMapping>> getButtonMappings() {
-        throw new UnsupportedOperationException();
+        return ResponseEntity.ok(List.of());
     }
 
 
