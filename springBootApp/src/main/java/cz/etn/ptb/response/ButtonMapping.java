@@ -1,4 +1,4 @@
-package cz.etn.ptb.dbo;
+package cz.etn.ptb.response;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

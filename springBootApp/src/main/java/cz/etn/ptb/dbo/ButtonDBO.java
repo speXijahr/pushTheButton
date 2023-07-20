@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 
 @Data
 @NoArgsConstructor
-public class ButtonState {
+public class ButtonDBO {
 
     @Id
     @NotNull
@@ -21,9 +21,7 @@ public class ButtonState {
      * 3 - Inactive
      * 4 - Unknown
      */
-    private String stateId;
+    private long lastHeartbeat;
 
     private long reservationExpire;
-
-
 }

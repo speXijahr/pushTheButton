@@ -1,6 +1,6 @@
 package cz.etn.ptb.config;
 
-import cz.etn.ptb.dbo.ButtonMapping;
+import cz.etn.ptb.response.ButtonMapping;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
