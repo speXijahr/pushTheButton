@@ -3,6 +3,7 @@ package cz.etn.ptb.controllers;
 
 import cz.etn.ptb.dbo.ButtonMapping;
 import cz.etn.ptb.dbo.ButtonState;
+import cz.etn.ptb.exception.UnknownButtonStateException;
 import cz.etn.ptb.repo.ButtonStateRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,8 @@ public class ButtonController {
      */
     @PostMapping("heartbeat")
     ResponseEntity<String> heartbeat(@RequestParam String buttonId) {
-        throw new UnsupportedOperationException();
+        var result = repo.findById(buttonId);
+        return ResponseEntity.ok(result.map(ButtonState::getStateId).orElseThrow(() -> new UnknownButtonStateException("Couldn't find button state for id " + buttonId)));
     }
 
     /**
