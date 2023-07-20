@@ -1,6 +1,7 @@
 package cz.etn.ptb.controllers;
 
 
+import com.google.common.collect.Maps;
 import cz.etn.ptb.config.ButtonMappingsConfiguration;
 import cz.etn.ptb.dbo.ButtonDBO;
 import cz.etn.ptb.response.ButtonMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -24,9 +26,9 @@ public class ButtonController {
 
     private final ButtonMappingsConfiguration buttonMappings;
     private static Duration RESERVATION_TIME = Duration.ofMinutes(15);
-    private static Duration BUTTON_STATE_UNKOWN_THRESHOLD = Duration.ofMinutes(1);
+    public static Duration BUTTON_STATE_UNKOWN_THRESHOLD = Duration.ofMinutes(1);
 
-    private static Duration BUTTON_STATE_FLASHING_THRESHOLD = Duration.ofMinutes(1);
+    public static Duration BUTTON_STATE_FLASHING_THRESHOLD = Duration.ofMinutes(1);
 
     /**
      * Button is periodically polling for actual state.
@@ -40,22 +42,7 @@ public class ButtonController {
         button.setLastHeartbeat(Instant.now().toEpochMilli());
         repo.insert(button);
 
-        return ResponseEntity.ok(getButtonState(button));
-    }
-
-    private Integer getButtonState(ButtonDBO buttonDBO) {
-        var now = Instant.now().toEpochMilli();
-
-        if (now - buttonDBO.getLastHeartbeat() > BUTTON_STATE_UNKOWN_THRESHOLD.toMillis()) {
-            return ButtonStateResponse.BUTTON_STATE_INACTIVE;
-        } else if (buttonDBO.getReservationExpire() - now > BUTTON_STATE_FLASHING_THRESHOLD.toMillis()) {
-            return ButtonStateResponse.BUTTON_STATE_FLASHING;
-        } else if (buttonDBO.getReservationExpire() > now) {
-            return ButtonStateResponse.BUTTON_STATE_ACTIVE;
-        } else {
-            return ButtonStateResponse.BUTTON_STATE_INACTIVE;
-        }
-        
+        return ResponseEntity.ok(ButtonStateResponse.getButtonState(button));
     }
 
     /**
@@ -68,7 +55,7 @@ public class ButtonController {
     ResponseEntity<Integer> buttonPush(@RequestParam String buttonId) {
         var buttonDbo = repo.findById(buttonId).orElseGet(() -> createNewButtonState(buttonId));
         repo.insert(buttonDbo);
-        return ResponseEntity.ok(getButtonState(buttonDbo));
+        return ResponseEntity.ok(ButtonStateResponse.getButtonState(buttonDbo));
     }
 
     private ButtonDBO createNewButtonState(String buttonId) {
@@ -86,8 +73,23 @@ public class ButtonController {
     }
 
     @GetMapping("buttonState")
-    ResponseEntity<List<ButtonMapping>> getButtonState() {
-        return ResponseEntity.ok(buttonMappings.getMappings());
+    ResponseEntity<List<ButtonStateResponse>> getButtonState() {
+        var buttons = Maps.uniqueIndex(repo.findAll(), ButtonDBO::getButtonId);
+        var mappings = buttonMappings.getMappings();
+
+        List<ButtonStateResponse> buttonStates = new ArrayList<>();
+        for (var mapping : mappings) {
+            if (buttons.containsKey(mapping.getId())) {
+                var button = buttons.get(mapping.getId());
+                buttonStates.add(ButtonStateResponse.from(button));
+            } else {
+                var buttonState = new ButtonStateResponse();
+                buttonState.setButtonId(mapping.getId());
+                buttonState.setStateId(ButtonStateResponse.BUTTON_STATE_UNKNOWN);
+            }
+        }
+
+        return ResponseEntity.ok(buttonStates);
     }
 
 
