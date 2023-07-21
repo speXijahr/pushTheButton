@@ -21,10 +21,10 @@ import java.util.*;
 public class ButtonController {
     
     private final ButtonMappingsConfiguration buttonMappings;
-    private static Duration RESERVATION_TIME = Duration.ofMinutes(15);
-    public static Duration BUTTON_STATE_UNKOWN_THRESHOLD = Duration.ofMinutes(1);
+    public static final Duration RESERVATION_TIME = Duration.ofMinutes(15);
+    public static final Duration BUTTON_STATE_UNKOWN_THRESHOLD = Duration.ofMinutes(1);
 
-    public static Duration BUTTON_STATE_FLASHING_THRESHOLD = Duration.ofMinutes(1);
+    public static final Duration BUTTON_STATE_FLASHING_THRESHOLD = Duration.ofMinutes(1);
 
     Map<String, ButtonDBO> db = new LinkedHashMap<>();
 
@@ -42,7 +42,7 @@ public class ButtonController {
         var result = Optional.ofNullable(db.get(buttonId));
         var button = result.orElse(createNewButton(buttonId));
 
-        button.setLastHeartbeat(Instant.now().toEpochMilli());
+        button.setLastHeartbeat(Instant.now());
         db.put(buttonId, button);
 
         return ResponseEntity.ok(ButtonStateResponse.getButtonState(button));
@@ -57,10 +57,10 @@ public class ButtonController {
     @PostMapping("buttonPush")
     ResponseEntity<ButtonStateResponse.LightStatus> buttonPush(@RequestBody String buttonId) {
         var buttonDbo = Optional.ofNullable(db.get(buttonId)).orElseGet(() -> createNewButtonWithExpire(buttonId));
-        if (buttonDbo.getReservationExpire() - Instant.now().toEpochMilli() < BUTTON_STATE_FLASHING_THRESHOLD.toMillis()) {
-            buttonDbo.setReservationExpire(Instant.now().toEpochMilli() + RESERVATION_TIME.toMillis());
+        if (Duration.between(buttonDbo.getReservationExpire(), Instant.now()).compareTo(BUTTON_STATE_FLASHING_THRESHOLD) < 0) {
+            buttonDbo.setReservationExpire(Instant.now().plus(RESERVATION_TIME));
         } else {
-            buttonDbo.setReservationExpire(0);
+            buttonDbo.setReservationExpire(Instant.MIN);
         }
         db.put(buttonId, buttonDbo);
         return ResponseEntity.ok(ButtonStateResponse.getButtonState(buttonDbo));
@@ -69,15 +69,15 @@ public class ButtonController {
     private ButtonDBO createNewButton(String buttonId) {
         var state = new ButtonDBO();
         state.setButtonId(buttonId);
-        state.setLastHeartbeat(Instant.now().toEpochMilli());
+        state.setLastHeartbeat(Instant.now());
 
         return state;
     }
 
     private ButtonDBO createNewButtonWithExpire(String buttonId) {
         var button = createNewButton(buttonId);
-        button.setLastHeartbeat(Instant.now().toEpochMilli());
-        button.setReservationExpire(Instant.now().toEpochMilli() + RESERVATION_TIME.toMillis());
+        button.setLastHeartbeat(Instant.now());
+        button.setReservationExpire(Instant.now().plus(RESERVATION_TIME));
 
         return button;
     }

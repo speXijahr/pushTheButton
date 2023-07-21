@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 
 import javax.validation.constraints.NotNull;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -14,14 +15,7 @@ public class ButtonDBO {
     @NotNull
     private String buttonId;
 
-    /**
-     * States
-     * 1 - Active
-     * 2 - Flashing
-     * 3 - Inactive
-     * 4 - Unknown
-     */
-    private long lastHeartbeat;
+    private Instant lastHeartbeat;
 
-    private long reservationExpire;
+    private Instant reservationExpire;
 }

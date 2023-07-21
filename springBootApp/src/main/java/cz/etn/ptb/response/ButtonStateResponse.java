@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotNull;
+import java.time.Duration;
 import java.time.Instant;
 
 import static cz.etn.ptb.controllers.ButtonController.BUTTON_STATE_FLASHING_THRESHOLD;
@@ -29,18 +30,21 @@ public class ButtonStateResponse {
         var buttonState = new ButtonStateResponse();
         buttonState.setButtonId(button.getButtonId());
         buttonState.setStateId(getButtonState(button));
-        buttonState.setReservationExpire(button.getReservationExpire());
+        buttonState.setReservationExpire(button.getReservationExpire().toEpochMilli());
 
         return buttonState;
     }
 
     public static LightStatus getButtonState(ButtonDBO buttonDBO) {
-        var now = Instant.now().toEpochMilli();
+        var now = Instant.now();
 
-        if (now - buttonDBO.getLastHeartbeat() > BUTTON_STATE_UNKOWN_THRESHOLD.toMillis()) return LightStatus.UNKNOWN;
-        if (buttonDBO.getReservationExpire() == 0) return LightStatus.LIGHTS_OFF;
-        if (buttonDBO.getReservationExpire() - now < BUTTON_STATE_FLASHING_THRESHOLD.toMillis()) return LightStatus.LIGHTS_BLINK;
-        if (buttonDBO.getReservationExpire() > now) return LightStatus.LIGHTS_ON;
+        if (buttonDBO.getLastHeartbeat() == null || Duration.between(buttonDBO.getLastHeartbeat(), now).compareTo(BUTTON_STATE_UNKOWN_THRESHOLD) > 0) return LightStatus.UNKNOWN;
+        if (!Duration.between(buttonDBO.getReservationExpire(), Instant.now()).isNegative()) return LightStatus.LIGHTS_OFF;
+
+        var reservationExpireDuration = Duration.between(now, buttonDBO.getReservationExpire());
+        if (reservationExpireDuration.compareTo(BUTTON_STATE_FLASHING_THRESHOLD) < 0 && !reservationExpireDuration.isNegative()) return LightStatus.LIGHTS_BLINK;
+        if (!Duration.between(now, buttonDBO.getReservationExpire()).isNegative()) return LightStatus.LIGHTS_ON;
+
         return LightStatus.LIGHTS_OFF;
     }
 
